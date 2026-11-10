@@ -24,6 +24,7 @@ static size_t selectedDevice = 0;
 static UiMode uiMode = UiMode::List;
 static bool snifferRunning = false;
 static unsigned long lastStatusReportMs = 0;
+static RiskEngine riskEngine;
 
 void setup() {
     Serial.begin(115200);
@@ -90,15 +91,19 @@ void loop() {
             (selectedDevice + 1) % deviceManager.deviceCount();
     }
     if (events.modePressed) {
-        const uint8_t nextMode =
-            (static_cast<uint8_t>(uiMode) + 1) % 3;
-        uiMode = static_cast<UiMode>(nextMode);
+        uiMode = uiMode == UiMode::List ? UiMode::Detail : UiMode::List;
+    }
+
+    if (deviceManager.deviceCount() == 0) {
+        selectedDevice = 0;
+    } else if (selectedDevice >= deviceManager.deviceCount()) {
+        selectedDevice = deviceManager.deviceCount() - 1;
     }
 
     bool highRiskPresent = false;
     for (size_t i = 0; i < deviceManager.deviceCount(); ++i) {
         const Device* device = deviceManager.deviceAt(i);
-        if (RiskEngine().evaluate(*device, now).level == RiskLevel::High) {
+        if (riskEngine.evaluate(*device, now).level == RiskLevel::High) {
             highRiskPresent = true;
             break;
         }
@@ -117,7 +122,7 @@ void loop() {
         for (size_t i = 0; i < deviceManager.deviceCount(); ++i) {
             const Device* device = deviceManager.deviceAt(i);
             Serial.printf("%s RSSI %.1f dBm CH %d packets %lu trend %s\n",
-                          WiFiScanner::formatMac(device->mac).c_str(),
+                          formatMac(device->mac).c_str(),
                           device->filteredRSSI, device->channel,
                           static_cast<unsigned long>(device->packetCount),
                           device->rssiTrend == RssiTrend::Approaching

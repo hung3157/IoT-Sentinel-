@@ -6,7 +6,6 @@
 #include "distance_estimator.h"
 #include "rssi_filter.h"
 #include "risk_engine.h"
-#include "semiconductor_diagnostics.h"
 
 static bool near(float actual, float expected, float tolerance = 0.01f) {
     return fabsf(actual - expected) <= tolerance;
@@ -111,36 +110,5 @@ int main() {
     assert(risk.score == 0);
     assert(risk.level == RiskLevel::Low);
 
-    BjtAnalysis bjt{};
-    assert(SemiconductorDiagnostics::analyzeNpn(
-        0.7f, 2.0f, 0.0f, 3.3f, 1000.0f, bjt));
-    assert(bjt.region == BjtRegion::Active);
-    assert(near(bjt.vbe, 0.7f));
-    assert(near(bjt.vce, 2.0f));
-    assert(near(bjt.collectorCurrentAmps, 0.0013f, 0.00001f));
-    assert(SemiconductorDiagnostics::analyzeNpn(
-        0.7f, 0.1f, 0.0f, 3.3f, 1000.0f, bjt));
-    assert(bjt.region == BjtRegion::Saturation);
-    assert(SemiconductorDiagnostics::analyzeNpn(
-        0.4f, 3.2f, 0.0f, 3.3f, 1000.0f, bjt));
-    assert(bjt.region == BjtRegion::Cutoff);
-    assert(!SemiconductorDiagnostics::analyzeNpn(
-        0.7f, 3.5f, 0.0f, 3.3f, 1000.0f, bjt));
-
-    NmosRegion mosfetRegion = NmosRegion::Cutoff;
-    assert(SemiconductorDiagnostics::analyzeNmos(1.0f, 1.0f, 2.0f,
-                                                 mosfetRegion));
-    assert(mosfetRegion == NmosRegion::Cutoff);
-    assert(SemiconductorDiagnostics::analyzeNmos(3.0f, 0.5f, 2.0f,
-                                                 mosfetRegion));
-    assert(mosfetRegion == NmosRegion::Linear);
-    assert(SemiconductorDiagnostics::analyzeNmos(3.0f, 2.0f, 2.0f,
-                                                 mosfetRegion));
-    assert(mosfetRegion == NmosRegion::Saturation);
-
-    DiodeAnalysis diode{};
-    assert(SemiconductorDiagnostics::analyzeDiode(0.65f, 0.01f, diode));
-    assert(diode.conducting);
-    assert(!SemiconductorDiagnostics::analyzeDiode(-0.1f, 0.0f, diode));
     return 0;
 }

@@ -17,7 +17,7 @@ host without an ESP32:
 g++ -std=c++11 -Itest/native -Iinclude \
   test/native/test_core.cpp \
   src/rssi_filter.cpp src/distance_estimator.cpp src/device_manager.cpp \
-  src/risk_engine.cpp src/semiconductor_diagnostics.cpp \
+  src/risk_engine.cpp \
   -o /tmp/iot-sentinel-core-test
 /tmp/iot-sentinel-core-test
 ```

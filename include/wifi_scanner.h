@@ -17,7 +17,6 @@ public:
     const RadioObservation* observations() const;
     size_t observationCount() const;
 
-    static String formatMac(const uint8_t mac[6]);
     static void printObservation(const RadioObservation& observation);
 
 private:

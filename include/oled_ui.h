@@ -7,8 +7,7 @@
 
 enum class UiMode : uint8_t {
     List,
-    Detail,
-    Diagnostics
+    Detail
 };
 
 class OledUi {
@@ -22,7 +21,6 @@ public:
 private:
     void renderList(const DeviceManager& devices, size_t selectedIndex);
     void renderDetail(const Device& device, unsigned long now);
-    void renderDiagnostics();
     static const char* riskLabel(RiskLevel level);
     static const char* trendLabel(RssiTrend trend);
 

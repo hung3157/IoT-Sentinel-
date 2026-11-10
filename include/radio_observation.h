@@ -19,3 +19,5 @@ struct RadioObservation {
     RadioFrameType frameType = RadioFrameType::Unknown;
     uint8_t frameSubtype = 0;
 };
+
+String formatMac(const uint8_t mac[6]);
