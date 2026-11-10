@@ -1,0 +1,23 @@
+
+This directory is intended for PlatformIO Test Runner and project tests.
+
+Unit Testing is a software testing method by which individual units of
+source code, sets of one or more MCU program modules together with associated
+control data, usage procedures, and operating procedures, are tested to
+determine whether they are fit for use. Unit testing finds problems early
+in the development cycle.
+
+More information about PlatformIO Unit Testing:
+- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+
+The portable RSSI, distance, and device-management checks can be run on the
+host without an ESP32:
+
+```sh
+g++ -std=c++11 -Itest/native -Iinclude \
+  test/native/test_core.cpp \
+  src/rssi_filter.cpp src/distance_estimator.cpp src/device_manager.cpp \
+  src/risk_engine.cpp src/semiconductor_diagnostics.cpp \
+  -o /tmp/iot-sentinel-core-test
+/tmp/iot-sentinel-core-test
+```
