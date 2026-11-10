@@ -39,11 +39,12 @@ bool DeviceManager::update(const RadioObservation& observation) {
     device.channel = observation.channel;
     device.lastSeen = observation.timestamp;
     ++device.seenCount;
-    const float slope = rssiFilters_[index].trendSlope();
-    device.rssiTrend = slope >= 0.75f
+    const float trendChange = rssiFilters_[index].trendChange();
+    device.rssiTrend = trendChange >= 2.0f
                            ? RssiTrend::Approaching
-                           : (slope <= -0.75f ? RssiTrend::MovingAway
-                                             : RssiTrend::Stable);
+                           : (trendChange <= -2.0f
+                                  ? RssiTrend::MovingAway
+                                  : RssiTrend::Stable);
 
     if (observation.frameType != RadioFrameType::Unknown) {
         ++device.packetCount;

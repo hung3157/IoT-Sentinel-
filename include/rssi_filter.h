@@ -10,7 +10,7 @@ public:
 
     float addSample(float sample);
     float value() const;
-    float trendSlope() const;
+    float trendChange() const;
     size_t sampleCount() const;
     void reset();
 

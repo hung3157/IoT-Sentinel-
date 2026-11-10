@@ -21,29 +21,21 @@ float RssiFilter::value() const {
     return sampleCount_ == 0 ? 0.0f : sum_ / sampleCount_;
 }
 
-float RssiFilter::trendSlope() const {
-    if (sampleCount_ < 2) {
+float RssiFilter::trendChange() const {
+    if (sampleCount_ < 4) {
         return 0.0f;
     }
 
     const size_t firstIndex =
         sampleCount_ == kWindowSize ? nextIndex_ : 0;
-    float sumY = 0.0f;
-    float sumXY = 0.0f;
-    for (size_t i = 0; i < sampleCount_; ++i) {
-        const float y = samples_[(firstIndex + i) % kWindowSize];
-        sumY += y;
-        sumXY += static_cast<float>(i) * y;
+    const size_t half = sampleCount_ / 2;
+    float oldTotal = 0.0f;
+    float newTotal = 0.0f;
+    for (size_t i = 0; i < half; ++i) {
+        oldTotal += samples_[(firstIndex + i) % kWindowSize];
+        newTotal += samples_[(firstIndex + half + i) % kWindowSize];
     }
-
-    const float count = static_cast<float>(sampleCount_);
-    const float sumX = count * (count - 1.0f) / 2.0f;
-    const float sumX2 =
-        count * (count - 1.0f) * (2.0f * count - 1.0f) / 6.0f;
-    const float denominator = count * sumX2 - sumX * sumX;
-    return denominator == 0.0f
-               ? 0.0f
-               : (count * sumXY - sumX * sumY) / denominator;
+    return (newTotal - oldTotal) / static_cast<float>(half);
 }
 
 size_t RssiFilter::sampleCount() const {

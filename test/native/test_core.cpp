@@ -35,7 +35,7 @@ int main() {
         filter.addSample(static_cast<float>(-60 + i));
     }
     assert(filter.sampleCount() == 8);
-    assert(filter.trendSlope() > 0.9f);
+    assert(filter.trendChange() > 3.0f);
     assert(near(filter.addSample(-52.0f), -55.5f));
 
     DistanceEstimator estimator;
@@ -72,6 +72,8 @@ int main() {
 
     assert(devices.setKnown(first.mac, true));
     assert(devices.findByMac(first.mac)->known);
+    devices.expire(11999);
+    assert(devices.deviceCount() == 1);
     devices.expire(12000);
     assert(devices.deviceCount() == 0);
 
@@ -79,6 +81,16 @@ int main() {
     multicast.mac[0] = 0x01;
     assert(!devices.update(multicast));
     assert(devices.deviceCount() == 0);
+
+    DeviceManager full(100000);
+    for (uint8_t i = 1; i <= DeviceManager::kMaxDevices; ++i) {
+        assert(full.update(observation(i, -60, 1000)));
+    }
+    assert(full.deviceCount() == DeviceManager::kMaxDevices);
+    assert(full.update(observation(33, -50, 1001)));
+    assert(full.deviceCount() == DeviceManager::kMaxDevices);
+    assert(full.findByMac(observation(1, -60, 1000).mac) == nullptr);
+    assert(full.findByMac(observation(33, -50, 1001).mac) != nullptr);
 
     Device riskDevice{};
     riskDevice.filteredRSSI = -50.0f;
