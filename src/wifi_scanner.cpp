@@ -11,14 +11,21 @@ WiFiScanner::WiFiScanner(unsigned long timeDiff)
     }
 }
 
-void WiFiScanner::begin() {
-    WiFi.mode(WIFI_STA);
-    WiFi.setSleep(false);
+bool WiFiScanner::begin() {
+    if (!WiFi.mode(WIFI_STA)) {
+        Serial.println("Unable to start WiFi station mode");
+        return false;
+    }
+    if (!WiFi.setSleep(false)) {
+        Serial.println("Unable to disable WiFi sleep");
+        return false;
+    }
     WiFi.disconnect();
     delay(100);
     hasScanned_ = false;
     scanInProgress_ = false;
     observationCount_ = 0;
+    return true;
 }
 
 String WiFiScanner::formatMac(const uint8_t mac[6]) {
@@ -42,11 +49,6 @@ void WiFiScanner::printObservation(const RadioObservation& observation) {
     Serial.printf("TS: %lu ms\n", observation.timestamp);
 }
 
-bool WiFiScanner::scanOnce() {
-    scanInProgress_ = false;
-    return collectResults(WiFi.scanNetworks());
-}
-
 bool WiFiScanner::collectResults(int foundNetworks) {
     observationCount_ = 0;
     if (foundNetworks < 0) {
@@ -55,6 +57,7 @@ bool WiFiScanner::collectResults(int foundNetworks) {
         return false;
     }
 
+    const unsigned long timestamp = millis();
     for (int i = 0; i < foundNetworks && i < kMaxObservations; ++i) {
         RadioObservation observation{};
 
@@ -66,12 +69,11 @@ bool WiFiScanner::collectResults(int foundNetworks) {
 
         observation.rssi = WiFi.RSSI(i);
         observation.channel = WiFi.channel(i);
-        observation.timestamp = millis();
+        observation.timestamp = timestamp;
 
         const String ssid = WiFi.SSID(i);
         observation.hasSSID = !ssid.isEmpty();
         observation.ssid = ssid;
-        observations_[observationCount_++] = observation;
         observations_[observationCount_++] = observation;
     }
 

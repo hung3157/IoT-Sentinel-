@@ -36,10 +36,14 @@ void setup() {
         }
     } else {
         Serial.println("Sniffer initialization failed; falling back to WiFi scan");
-        wifiScanner.begin();
+        if (!wifiScanner.begin()) {
+            Serial.println("WiFi scanner initialization failed");
+        }
     }
 #else
-    wifiScanner.begin();
+    if (!wifiScanner.begin()) {
+        Serial.println("WiFi scanner initialization failed");
+    }
 #endif
     buttons.begin();
     pinMode(kAlertLedPin, OUTPUT);

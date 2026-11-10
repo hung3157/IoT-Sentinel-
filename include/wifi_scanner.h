@@ -6,29 +6,25 @@
 #include "radio_observation.h"
 
 class WiFiScanner {
-    public:
+public:
+    static const size_t kMaxObservations = 32;
 
-    WiFiScanner(unsigned long timeDiff);
+    explicit WiFiScanner(unsigned long scanIntervalMs);
 
-    void begin(); 
-    bool scanOnce();
+    bool begin();
     bool update();
 
     const RadioObservation* observations() const;
     size_t observationCount() const;
-    
+
     static String formatMac(const uint8_t mac[6]);
     static void printObservation(const RadioObservation& observation);
-        
-    private:
 
-    static const size_t kMaxObservations = 5;
-
+private:
     unsigned long scanIntervalMs_;
     unsigned long lastScanMs_;
     bool hasScanned_;
     bool scanInProgress_;
-        
     size_t observationCount_;
     RadioObservation observations_[kMaxObservations];
 
