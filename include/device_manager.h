@@ -21,6 +21,7 @@ struct Device {
     float distanceMeters = 0.0f;
     bool hasDistanceEstimate = false;
     int channel = 0;
+    uint8_t frameSubtype = 0;
     unsigned long firstSeen = 0;
     unsigned long lastSeen = 0;
     unsigned long seenCount = 0;

@@ -50,8 +50,10 @@ int main() {
     RadioObservation first = observation(1, -60, 1000,
                                         RadioFrameType::Data);
     assert(devices.update(first));
-    assert(devices.update(observation(1, -59, 2000,
-                                     RadioFrameType::Management)));
+    RadioObservation second =
+        observation(1, -59, 2000, RadioFrameType::Management);
+    second.frameSubtype = 8;
+    assert(devices.update(second));
     assert(devices.deviceCount() == 1);
     const Device* tracked = devices.findByMac(first.mac);
     assert(tracked != nullptr);
@@ -59,6 +61,7 @@ int main() {
     assert(tracked->packetCount == 2);
     assert(tracked->dataFrameCount == 1);
     assert(tracked->managementFrameCount == 1);
+    assert(tracked->frameSubtype == 8);
 
     for (unsigned long time = 3000; time <= 7000; time += 1000) {
         assert(devices.update(observation(

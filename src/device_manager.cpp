@@ -37,6 +37,7 @@ bool DeviceManager::update(const RadioObservation& observation) {
     device.filteredRSSI = rssiFilters_[index].addSample(
         static_cast<float>(observation.rssi));
     device.channel = observation.channel;
+    device.frameSubtype = observation.frameSubtype;
     device.lastSeen = observation.timestamp;
     ++device.seenCount;
     const float trendChange = rssiFilters_[index].trendChange();
@@ -47,16 +48,24 @@ bool DeviceManager::update(const RadioObservation& observation) {
                                   : RssiTrend::Stable);
 
     if (observation.frameType != RadioFrameType::Unknown) {
-        ++device.packetCount;
+        if (device.packetCount < UINT32_MAX) {
+            ++device.packetCount;
+        }
         switch (observation.frameType) {
             case RadioFrameType::Management:
-                ++device.managementFrameCount;
+                if (device.managementFrameCount < UINT32_MAX) {
+                    ++device.managementFrameCount;
+                }
                 break;
             case RadioFrameType::Control:
-                ++device.controlFrameCount;
+                if (device.controlFrameCount < UINT32_MAX) {
+                    ++device.controlFrameCount;
+                }
                 break;
             case RadioFrameType::Data:
-                ++device.dataFrameCount;
+                if (device.dataFrameCount < UINT32_MAX) {
+                    ++device.dataFrameCount;
+                }
                 break;
             case RadioFrameType::Unknown:
                 break;

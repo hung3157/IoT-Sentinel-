@@ -14,8 +14,14 @@ WiFiSniffer::WiFiSniffer()
       initialized_(false) {}
 
 bool WiFiSniffer::begin() {
-    WiFi.mode(WIFI_STA);
-    WiFi.setSleep(false);
+    if (!WiFi.mode(WIFI_STA)) {
+        Serial.println("Unable to start WiFi station mode");
+        return false;
+    }
+    if (!WiFi.setSleep(false)) {
+        Serial.println("Unable to disable WiFi sleep");
+        return false;
+    }
 
     wifi_promiscuous_filter_t filter{};
     filter.filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT |
