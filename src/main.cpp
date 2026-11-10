@@ -26,6 +26,26 @@ static bool snifferRunning = false;
 static unsigned long lastStatusReportMs = 0;
 static RiskEngine riskEngine;
 
+static const char* trendName(RssiTrend trend) {
+    if (trend == RssiTrend::Approaching) {
+        return "APPROACHING";
+    }
+    if (trend == RssiTrend::MovingAway) {
+        return "MOVING AWAY";
+    }
+    return "STABLE";
+}
+
+static const char* riskName(RiskLevel level) {
+    if (level == RiskLevel::High) {
+        return "HIGH";
+    }
+    if (level == RiskLevel::Medium) {
+        return "MEDIUM";
+    }
+    return "LOW";
+}
+
 void setup() {
     Serial.begin(115200);
     delay(1000);
@@ -121,15 +141,18 @@ void loop() {
 #endif
         for (size_t i = 0; i < deviceManager.deviceCount(); ++i) {
             const Device* device = deviceManager.deviceAt(i);
-            Serial.printf("%s RSSI %.1f dBm CH %d packets %lu trend %s\n",
+            const RiskAssessment risk = riskEngine.evaluate(*device, now);
+            Serial.printf(
+                "%s RSSI raw=%d avg=%.1f dBm CH=%d packets=%lu "
+                "rate=%u/min age=%lus trend=%s risk=%s(%u)\n",
                           formatMac(device->mac).c_str(),
-                          device->filteredRSSI, device->channel,
+                          device->rawRSSI, device->filteredRSSI,
+                          device->channel,
                           static_cast<unsigned long>(device->packetCount),
-                          device->rssiTrend == RssiTrend::Approaching
-                              ? "APPROACHING"
-                              : (device->rssiTrend == RssiTrend::MovingAway
-                                     ? "MOVING_AWAY"
-                                     : "STABLE"));
+                          device->packetsPerMinute,
+                          (now - device->lastSeen) / 1000UL,
+                          trendName(device->rssiTrend),
+                          riskName(risk.level), risk.score);
         }
         lastStatusReportMs = now;
     }

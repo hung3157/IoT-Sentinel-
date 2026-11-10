@@ -84,13 +84,15 @@ void OledUi::renderDetail(const Device& device, unsigned long now) {
                     device.filteredRSSI);
     display_.setCursor(0, 42);
     if (device.hasDistanceEstimate) {
-        display_.printf("DIST EST ~%.1f m", device.distanceMeters);
+        display_.printf("D~%.1fm P%lu", device.distanceMeters,
+                        static_cast<unsigned long>(device.packetCount));
     } else {
-        display_.print("DIST EST unavailable");
+        display_.printf("DIST -- P%lu",
+                        static_cast<unsigned long>(device.packetCount));
     }
     display_.setCursor(0, 52);
-    display_.printf("RISK %s SEEN %lu", riskLabel(risk.level),
-                    device.seenCount);
+    display_.printf("RISK %s %s", riskLabel(risk.level),
+                    trendLabel(device.rssiTrend));
 }
 
 const char* OledUi::riskLabel(RiskLevel level) {

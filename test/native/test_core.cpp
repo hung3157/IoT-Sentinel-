@@ -37,6 +37,21 @@ int main() {
     assert(filter.trendChange() > 3.0f);
     assert(near(filter.addSample(-52.0f), -55.5f));
 
+    RssiFilter awayFilter;
+    RssiFilter steadyFilter;
+    for (int i = 0; i < 8; ++i) {
+        awayFilter.addSample(static_cast<float>(-50 - i));
+        steadyFilter.addSample(-60.0f);
+    }
+    assert(awayFilter.trendChange() < -3.0f);
+    assert(near(steadyFilter.trendChange(), 0.0f));
+    RssiFilter oddFilter;
+    for (int i = 0; i < 4; ++i) {
+        oddFilter.addSample(-60.0f);
+    }
+    oddFilter.addSample(-40.0f);
+    assert(oddFilter.trendChange() > 5.0f);
+
     DistanceEstimator estimator;
     float distance = 0.0f;
     assert(estimator.configure(-50.0f, 2.0f));
@@ -94,6 +109,16 @@ int main() {
     assert(full.findByMac(observation(1, -60, 1000).mac) == nullptr);
     assert(full.findByMac(observation(33, -50, 1001).mac) != nullptr);
 
+    DeviceManager activity(120000);
+    for (unsigned long time = 1000; time <= 7000; time += 1000) {
+        assert(activity.update(observation(
+            1, -60, time, RadioFrameType::Data)));
+    }
+    assert(activity.deviceAt(0)->packetsPerMinute >= 60);
+    activity.expire(61000);
+    assert(activity.deviceCount() == 1);
+    assert(activity.deviceAt(0)->packetsPerMinute == 0);
+
     Device riskDevice{};
     riskDevice.filteredRSSI = -50.0f;
     riskDevice.seenCount = 40;
@@ -112,6 +137,11 @@ int main() {
     risk = RiskEngine().evaluate(riskDevice, 61000);
     assert(risk.score == 0);
     assert(risk.level == RiskLevel::Low);
+    riskDevice.known = false;
+    riskDevice.filteredRSSI = -50.0f;
+    risk = RiskEngine().evaluate(riskDevice, 61000);
+    assert(risk.score == 55);
+    assert(risk.level == RiskLevel::Medium);
 
     return 0;
 }

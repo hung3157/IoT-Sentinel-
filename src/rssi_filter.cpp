@@ -28,14 +28,19 @@ float RssiFilter::trendChange() const {
 
     const size_t firstIndex =
         sampleCount_ == kWindowSize ? nextIndex_ : 0;
-    const size_t half = sampleCount_ / 2;
+    const size_t oldCount = sampleCount_ / 2;
+    const size_t newCount = sampleCount_ - oldCount;
     float oldTotal = 0.0f;
     float newTotal = 0.0f;
-    for (size_t i = 0; i < half; ++i) {
+    for (size_t i = 0; i < oldCount; ++i) {
         oldTotal += samples_[(firstIndex + i) % kWindowSize];
-        newTotal += samples_[(firstIndex + half + i) % kWindowSize];
     }
-    return (newTotal - oldTotal) / static_cast<float>(half);
+    for (size_t i = 0; i < newCount; ++i) {
+        newTotal +=
+            samples_[(firstIndex + oldCount + i) % kWindowSize];
+    }
+    return newTotal / static_cast<float>(newCount) -
+           oldTotal / static_cast<float>(oldCount);
 }
 
 size_t RssiFilter::sampleCount() const {

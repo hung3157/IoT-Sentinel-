@@ -1333,7 +1333,7 @@ Experimental Measurements
 
 # 11. Trạng thái triển khai
 
-Firmware đã tích hợp các đầu việc phần mềm của cả sáu phase:
+Firmware đã tích hợp các đầu việc phần mềm đến hết Phase 5:
 
 - [x] Phase 1 — Wi-Fi scan định kỳ, `RadioObservation`, timestamp và xử lý
   kết quả bất đồng bộ.
@@ -1345,13 +1345,12 @@ Firmware đã tích hợp các đầu việc phần mềm của cả sáu phase:
   scanner vẫn có thể được chọn làm fallback lúc biên dịch.
 - [x] Phase 5 — Packet/frame counters, activity rate, RSSI trend và device
   profile.
-- [x] Phase 6 — BJT/MOSFET/diode calculation APIs và Diagnostic UI state.
 
 ## Kiểm thử phần mềm
 
 - [x] Firmware build bằng PlatformIO cho `esp32dev`.
 - [x] Host tests cho RSSI filter, distance estimator, device tracking và
-  semiconductor calculations (`test/native/test_core.cpp`).
+  risk scoring (`test/native/test_core.cpp`).
 
 ## Kiểm thử cần phần cứng / dữ liệu thực nghiệm
 
@@ -1360,13 +1359,13 @@ Firmware đã tích hợp các đầu việc phần mềm của cả sáu phase:
 - [ ] Đo RSSI ở các khoảng cách đề xuất và hiệu chuẩn `RSSI_1m` cùng hệ số
   suy hao môi trường.
 - [ ] Thu dataset và đối chiếu RSSI trend, activity thresholds, risk score.
-- [ ] Hoàn thiện schematic/ADC front-end cho transistor và diode, sau đó xác
-  minh các phép đo bằng multimeter.
 
 Các mục cuối yêu cầu board, linh kiện, mạch và phép đo vật lý; chúng không
 được đánh dấu hoàn thành chỉ dựa trên build hoặc mô phỏng phần mềm. Xem
 `docs/hardware.md` trước khi lắp mạch. Khoảng cách RSSI và risk score chỉ là
 ước lượng heuristic, không phải kết luận chắc chắn về thiết bị hay nguy cơ.
+
+Phạm vi triển khai hiện tại dừng ở Phase 5. Phase 6 chưa được thực hiện.
 
 ## Trạng thái tại thời điểm khởi tạo roadmap (lưu trữ)
 

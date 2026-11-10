@@ -1,5 +1,6 @@
 #include "device_manager.h"
 
+#include <limits.h>
 #include <string.h>
 
 DeviceManager::DeviceManager(unsigned long timeoutMs)
@@ -39,11 +40,14 @@ bool DeviceManager::update(const RadioObservation& observation) {
     device.channel = observation.channel;
     device.frameSubtype = observation.frameSubtype;
     device.lastSeen = observation.timestamp;
-    ++device.seenCount;
+    if (device.seenCount < ULONG_MAX) {
+        ++device.seenCount;
+    }
+
     const float trendChange = rssiFilters_[index].trendChange();
-    device.rssiTrend = trendChange >= 2.0f
+    device.rssiTrend = trendChange >= 3.0f
                            ? RssiTrend::Approaching
-                           : (trendChange <= -2.0f
+                           : (trendChange <= -3.0f
                                   ? RssiTrend::MovingAway
                                   : RssiTrend::Stable);
 
@@ -110,6 +114,11 @@ void DeviceManager::expire(unsigned long now) {
         if ((now - devices_[index].lastSeen) >= timeoutMs_) {
             removeAt(index);
         } else {
+            if ((now - devices_[index].activityWindowStarted) >= 60000UL) {
+                devices_[index].activityWindowStarted = now;
+                devices_[index].activityWindowCount = 0;
+                devices_[index].packetsPerMinute = 0;
+            }
             ++index;
         }
     }
