@@ -2,11 +2,11 @@
 
 #include <Arduino.h>
 
-enum class RadioFrameType : uint8_t {
-    Unknown,
-    Management,
-    Control,
-    Data
+enum RadioFrameType {
+    FRAME_UNKNOWN,
+    FRAME_MANAGEMENT,
+    FRAME_CONTROL,
+    FRAME_DATA
 };
 
 struct RadioObservation {
@@ -16,7 +16,7 @@ struct RadioObservation {
     unsigned long timestamp = 0;
     bool hasSSID = false;
     String ssid;
-    RadioFrameType frameType = RadioFrameType::Unknown;
+    RadioFrameType frameType = FRAME_UNKNOWN;
     uint8_t frameSubtype = 0;
 };
 

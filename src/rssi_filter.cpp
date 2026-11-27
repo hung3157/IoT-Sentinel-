@@ -18,7 +18,10 @@ float RssiFilter::addSample(float sample) {
 }
 
 float RssiFilter::value() const {
-    return sampleCount_ == 0 ? 0.0f : sum_ / sampleCount_;
+    if (sampleCount_ == 0) {
+        return 0.0f;
+    }
+    return sum_ / sampleCount_;
 }
 
 float RssiFilter::trendChange() const {
@@ -26,8 +29,10 @@ float RssiFilter::trendChange() const {
         return 0.0f;
     }
 
-    const size_t firstIndex =
-        sampleCount_ == kWindowSize ? nextIndex_ : 0;
+    size_t firstIndex = 0;
+    if (sampleCount_ == kWindowSize) {
+        firstIndex = nextIndex_;
+    }
     const size_t oldCount = sampleCount_ / 2;
     const size_t newCount = sampleCount_ - oldCount;
     float oldTotal = 0.0f;
@@ -39,8 +44,9 @@ float RssiFilter::trendChange() const {
         newTotal +=
             samples_[(firstIndex + oldCount + i) % kWindowSize];
     }
-    return newTotal / static_cast<float>(newCount) -
-           oldTotal / static_cast<float>(oldCount);
+    const float oldAverage = oldTotal / (float)oldCount;
+    const float newAverage = newTotal / (float)newCount;
+    return newAverage - oldAverage;
 }
 
 size_t RssiFilter::sampleCount() const {

@@ -2,10 +2,10 @@
 
 #include "device_manager.h"
 
-enum class RiskLevel : uint8_t {
-    Low,
-    Medium,
-    High
+enum RiskLevel {
+    RISK_LOW,
+    RISK_MEDIUM,
+    RISK_HIGH
 };
 
 struct RiskAssessment {

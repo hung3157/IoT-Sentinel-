@@ -24,16 +24,18 @@ bool OledUi::begin() {
 }
 
 void OledUi::update(const DeviceManager& devices, size_t selectedIndex,
-                    UiMode mode, unsigned long now) {
+                    bool detailMode, unsigned long now) {
     if (!initialized_ || (now - lastRenderMs_) < 250) {
         return;
     }
     lastRenderMs_ = now;
     display_.clearDisplay();
 
-    if (mode == UiMode::Detail && devices.deviceCount() > 0) {
-        const size_t index =
-            selectedIndex < devices.deviceCount() ? selectedIndex : 0;
+    if (detailMode && devices.deviceCount() > 0) {
+        size_t index = selectedIndex;
+        if (index >= devices.deviceCount()) {
+            index = 0;
+        }
         renderDetail(*devices.deviceAt(index), now);
     } else {
         renderList(devices, selectedIndex);
@@ -53,27 +55,44 @@ void OledUi::renderList(const DeviceManager& devices, size_t selectedIndex) {
         return;
     }
 
-    const size_t start = selectedIndex < 3 ? 0 : selectedIndex - 2;
+    size_t start = 0;
+    if (selectedIndex >= 3) {
+        start = selectedIndex - 2;
+    }
+    int16_t y = 14;
     for (size_t row = 0; row < 3 && start + row < devices.deviceCount();
          ++row) {
         const Device* device = devices.deviceAt(start + row);
-        display_.setCursor(0, 14 + static_cast<int16_t>(row * 16));
-        display_.print(start + row == selectedIndex ? ">" : " ");
-        display_.print(device->known ? "KNOWN " : "UNKNOWN ");
+        display_.setCursor(0, y);
+        if (start + row == selectedIndex) {
+            display_.print(">");
+        } else {
+            display_.print(" ");
+        }
+        if (device->known) {
+            display_.print("KNOWN ");
+        } else {
+            display_.print("UNKNOWN ");
+        }
         if (device->hasSSID) {
             display_.print(device->ssid.substring(0, 8));
         } else {
             display_.print(formatMac(device->mac).substring(9));
         }
-        display_.setCursor(7, 22 + static_cast<int16_t>(row * 16));
+        display_.setCursor(7, y + 8);
         display_.printf("RSSI %d dBm", device->rawRSSI);
+        y += 16;
     }
 }
 
 void OledUi::renderDetail(const Device& device, unsigned long now) {
     const RiskAssessment risk = RiskEngine().evaluate(device, now);
     display_.setCursor(0, 0);
-    display_.println(device.known ? "KNOWN DEVICE" : "UNKNOWN DEVICE");
+    if (device.known) {
+        display_.println("KNOWN DEVICE");
+    } else {
+        display_.println("UNKNOWN DEVICE");
+    }
     display_.setCursor(0, 12);
     const String mac = formatMac(device.mac);
     display_.printf("MAC %.8s", mac.c_str());
@@ -85,10 +104,10 @@ void OledUi::renderDetail(const Device& device, unsigned long now) {
     display_.setCursor(0, 42);
     if (device.hasDistanceEstimate) {
         display_.printf("D~%.1fm P%lu", device.distanceMeters,
-                        static_cast<unsigned long>(device.packetCount));
+                        (unsigned long)device.packetCount);
     } else {
         display_.printf("DIST -- P%lu",
-                        static_cast<unsigned long>(device.packetCount));
+                        (unsigned long)device.packetCount);
     }
     display_.setCursor(0, 52);
     display_.printf("RISK %s %s", riskLabel(risk.level),
@@ -97,11 +116,11 @@ void OledUi::renderDetail(const Device& device, unsigned long now) {
 
 const char* OledUi::riskLabel(RiskLevel level) {
     switch (level) {
-        case RiskLevel::Low:
+        case RISK_LOW:
             return "LOW";
-        case RiskLevel::Medium:
+        case RISK_MEDIUM:
             return "MED";
-        case RiskLevel::High:
+        case RISK_HIGH:
             return "HIGH";
     }
     return "UNKNOWN";
@@ -109,11 +128,11 @@ const char* OledUi::riskLabel(RiskLevel level) {
 
 const char* OledUi::trendLabel(RssiTrend trend) {
     switch (trend) {
-        case RssiTrend::Approaching:
+        case RSSI_APPROACHING:
             return "APPROACH";
-        case RssiTrend::Stable:
+        case RSSI_STABLE:
             return "STABLE";
-        case RssiTrend::MovingAway:
+        case RSSI_MOVING_AWAY:
             return "AWAY";
     }
     return "UNKNOWN";

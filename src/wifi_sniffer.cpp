@@ -71,6 +71,7 @@ void WiFiSniffer::stop() {
 
 bool WiFiSniffer::popObservation(RadioObservation& observation) {
     PendingObservation pending{};
+    // The Wi-Fi callback can write to this queue at the same time.
     portENTER_CRITICAL(&queueMux_);
     if (queueCount_ == 0) {
         portEXIT_CRITICAL(&queueMux_);
@@ -106,8 +107,9 @@ void WiFiSniffer::receiveCallback(
         packetType == WIFI_PKT_MISC) {
         return;
     }
+    // The ESP32 Wi-Fi API gives the packet to callbacks as a void pointer.
     instance->handlePacket(
-        *static_cast<const wifi_promiscuous_pkt_t*>(buffer), packetType);
+        *(const wifi_promiscuous_pkt_t*)buffer, packetType);
 }
 
 void WiFiSniffer::handlePacket(
@@ -119,9 +121,9 @@ void WiFiSniffer::handlePacket(
         return;
     }
 
+    // The first two bytes contain the 802.11 frame type and subtype.
     const uint16_t frameControl =
-        static_cast<uint16_t>(frame[0]) |
-        (static_cast<uint16_t>(frame[1]) << 8);
+        (uint16_t)frame[0] | ((uint16_t)frame[1] << 8);
     const uint8_t frameType = (frameControl >> 2) & 0x03;
     const uint8_t subtype = (frameControl >> 4) & 0x0F;
 
@@ -135,20 +137,20 @@ void WiFiSniffer::handlePacket(
         if (length < 16) {
             return;
         }
-        pending.frameType = RadioFrameType::Management;
+        pending.frameType = FRAME_MANAGEMENT;
         memcpy(pending.mac, frame + 10, sizeof(pending.mac));
     } else if (packetType == WIFI_PKT_DATA && frameType == 2) {
         if (length < 16) {
             return;
         }
-        pending.frameType = RadioFrameType::Data;
+        pending.frameType = FRAME_DATA;
         memcpy(pending.mac, frame + 10, sizeof(pending.mac));
     } else if (packetType == WIFI_PKT_CTRL && frameType == 1) {
         if (subtype < 8 || subtype == 12 || subtype == 13 ||
             length < 16) {
             return;
         }
-        pending.frameType = RadioFrameType::Control;
+        pending.frameType = FRAME_CONTROL;
         memcpy(pending.mac, frame + 10, sizeof(pending.mac));
     } else {
         return;
@@ -161,6 +163,7 @@ void WiFiSniffer::handlePacket(
 }
 
 bool WiFiSniffer::enqueue(const PendingObservation& observation) {
+    // Keep the queue update safe while the callback and main loop share it.
     portENTER_CRITICAL(&queueMux_);
     if (queueCount_ == kQueueCapacity) {
         ++droppedCount_;

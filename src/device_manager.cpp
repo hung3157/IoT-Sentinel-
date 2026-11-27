@@ -22,9 +22,10 @@ bool DeviceManager::update(const RadioObservation& observation) {
     if (index < 0) {
         if (deviceCount_ == kMaxDevices) {
             index = findOldestIndex(observation.timestamp);
-            removeAt(static_cast<size_t>(index));
+            removeAt((size_t)index);
         }
-        index = static_cast<int>(deviceCount_++);
+        index = (int)deviceCount_;
+        deviceCount_++;
         devices_[index] = Device{};
         memcpy(devices_[index].mac, observation.mac,
                sizeof(devices_[index].mac));
@@ -35,9 +36,9 @@ bool DeviceManager::update(const RadioObservation& observation) {
 
     Device& device = devices_[index];
     device.rawRSSI = observation.rssi;
-    device.filteredRSSI = rssiFilters_[index].addSample(
-        static_cast<float>(observation.rssi));
+    device.filteredRSSI = rssiFilters_[index].addSample((float)observation.rssi);
     device.channel = observation.channel;
+    device.lastFrameType = observation.frameType;
     device.frameSubtype = observation.frameSubtype;
     device.lastSeen = observation.timestamp;
     if (device.seenCount < ULONG_MAX) {
@@ -45,33 +46,45 @@ bool DeviceManager::update(const RadioObservation& observation) {
     }
 
     const float trendChange = rssiFilters_[index].trendChange();
-    device.rssiTrend = trendChange >= 3.0f
-                           ? RssiTrend::Approaching
-                           : (trendChange <= -3.0f
-                                  ? RssiTrend::MovingAway
-                                  : RssiTrend::Stable);
+    if (trendChange >= 3.0f) {
+        device.rssiTrend = RSSI_APPROACHING;
+    } else if (trendChange <= -3.0f) {
+        device.rssiTrend = RSSI_MOVING_AWAY;
+    } else {
+        device.rssiTrend = RSSI_STABLE;
+    }
 
-    if (observation.frameType != RadioFrameType::Unknown) {
+    if (observation.frameType != FRAME_UNKNOWN) {
         if (device.packetCount < UINT32_MAX) {
             ++device.packetCount;
         }
         switch (observation.frameType) {
-            case RadioFrameType::Management:
+            case FRAME_MANAGEMENT:
                 if (device.managementFrameCount < UINT32_MAX) {
                     ++device.managementFrameCount;
                 }
+                if (observation.frameSubtype == 8 &&
+                    device.beaconCount < UINT32_MAX) {
+                    ++device.beaconCount;
+                } else if (observation.frameSubtype == 4 &&
+                           device.probeRequestCount < UINT32_MAX) {
+                    ++device.probeRequestCount;
+                } else if (observation.frameSubtype == 5 &&
+                           device.probeResponseCount < UINT32_MAX) {
+                    ++device.probeResponseCount;
+                }
                 break;
-            case RadioFrameType::Control:
+            case FRAME_CONTROL:
                 if (device.controlFrameCount < UINT32_MAX) {
                     ++device.controlFrameCount;
                 }
                 break;
-            case RadioFrameType::Data:
+            case FRAME_DATA:
                 if (device.dataFrameCount < UINT32_MAX) {
                     ++device.dataFrameCount;
                 }
                 break;
-            case RadioFrameType::Unknown:
+            case FRAME_UNKNOWN:
                 break;
         }
 
@@ -87,12 +100,13 @@ bool DeviceManager::update(const RadioObservation& observation) {
         const unsigned long elapsed =
             observation.timestamp - device.activityWindowStarted;
         if (elapsed >= 5000) {
-            const unsigned long rate =
-                (static_cast<unsigned long>(device.activityWindowCount) *
-                 60000UL) /
+            unsigned long rate =
+                ((unsigned long)device.activityWindowCount * 60000UL) /
                 elapsed;
-            device.packetsPerMinute = static_cast<uint16_t>(
-                rate > UINT16_MAX ? UINT16_MAX : rate);
+            if (rate > UINT16_MAX) {
+                rate = UINT16_MAX;
+            }
+            device.packetsPerMinute = (uint16_t)rate;
         } else {
             device.packetsPerMinute = 0;
         }
@@ -137,9 +151,10 @@ bool DeviceManager::setKnown(const uint8_t mac[6], bool known) {
     } else {
         const int knownIndex = findKnownIndex(mac);
         if (knownIndex >= 0) {
-            for (size_t i = static_cast<size_t>(knownIndex);
-                 i + 1 < knownCount_; ++i) {
+            size_t i = (size_t)knownIndex;
+            while (i + 1 < knownCount_) {
                 memcpy(knownMacs_[i], knownMacs_[i + 1], 6);
+                i++;
             }
             --knownCount_;
         }
@@ -156,15 +171,21 @@ size_t DeviceManager::deviceCount() const {
 }
 
 const Device* DeviceManager::deviceAt(size_t index) const {
-    return index < deviceCount_ ? &devices_[index] : nullptr;
+    if (index >= deviceCount_) {
+        return nullptr;
+    }
+    return &devices_[index];
 }
 
 const Device* DeviceManager::findByMac(const uint8_t mac[6]) const {
     if (!isTrackableMac(mac)) {
         return nullptr;
     }
-    const int index = findIndex(mac);
-    return index >= 0 ? &devices_[index] : nullptr;
+    int index = findIndex(mac);
+    if (index < 0) {
+        return nullptr;
+    }
+    return &devices_[index];
 }
 
 bool DeviceManager::configureDistance(float rssiAtOneMeter,
@@ -192,7 +213,7 @@ bool DeviceManager::isTrackableMac(const uint8_t mac[6]) {
 int DeviceManager::findIndex(const uint8_t mac[6]) const {
     for (size_t i = 0; i < deviceCount_; ++i) {
         if (memcmp(devices_[i].mac, mac, 6) == 0) {
-            return static_cast<int>(i);
+            return (int)i;
         }
     }
     return -1;
@@ -201,7 +222,7 @@ int DeviceManager::findIndex(const uint8_t mac[6]) const {
 int DeviceManager::findKnownIndex(const uint8_t mac[6]) const {
     for (size_t i = 0; i < knownCount_; ++i) {
         if (memcmp(knownMacs_[i], mac, 6) == 0) {
-            return static_cast<int>(i);
+            return (int)i;
         }
     }
     return -1;
@@ -215,7 +236,7 @@ int DeviceManager::findOldestIndex(unsigned long now) const {
             oldest = i;
         }
     }
-    return static_cast<int>(oldest);
+    return (int)oldest;
 }
 
 void DeviceManager::removeAt(size_t index) {

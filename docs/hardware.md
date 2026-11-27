@@ -11,9 +11,9 @@
 | Alert LED | GPIO 2 | Drive through a current-limiting resistor |
 
 The OLED address defaults to `0x3C`. These are firmware defaults; verify the
-specific development board and wiring before powering the circuit.
-The default build uses passive Wi-Fi metadata monitoring; build the retained
-scan-only mode with `pio run -e esp32dev-scan`.
+specific development board and wiring before powering the circuit. Passive
+Wi-Fi metadata monitoring is enabled by default. Set `useSniffer` to `false`
+in `src/main.cpp` to use periodic scans.
 
 Connect the alert LED through a current-limiting resistor. Test the screen,
 buttons, and LED on the actual board before using the handheld UI.

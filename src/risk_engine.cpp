@@ -13,7 +13,7 @@ RiskAssessment RiskEngine::evaluate(const Device& device,
         (now - device.firstSeen) >= 60000UL) {
         score += 20;
     }
-    if (device.rssiTrend == RssiTrend::Approaching) {
+    if (device.rssiTrend == RSSI_APPROACHING) {
         score += 15;
     }
     if (device.packetsPerMinute >= 60) {
@@ -25,10 +25,13 @@ RiskAssessment RiskEngine::evaluate(const Device& device,
     }
 
     RiskAssessment assessment{};
-    assessment.score = static_cast<uint8_t>(score);
-    assessment.level = score <= 30
-                           ? RiskLevel::Low
-                           : (score <= 60 ? RiskLevel::Medium
-                                          : RiskLevel::High);
+    assessment.score = (uint8_t)score;
+    if (score <= 30) {
+        assessment.level = RISK_LOW;
+    } else if (score <= 60) {
+        assessment.level = RISK_MEDIUM;
+    } else {
+        assessment.level = RISK_HIGH;
+    }
     return assessment;
 }

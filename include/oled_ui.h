@@ -5,18 +5,13 @@
 #include "device_manager.h"
 #include "risk_engine.h"
 
-enum class UiMode : uint8_t {
-    List,
-    Detail
-};
-
 class OledUi {
 public:
     OledUi(uint8_t sdaPin, uint8_t sclPin, uint8_t address = 0x3C);
 
     bool begin();
     void update(const DeviceManager& devices, size_t selectedIndex,
-                UiMode mode, unsigned long now);
+                bool detailMode, unsigned long now);
 
 private:
     void renderList(const DeviceManager& devices, size_t selectedIndex);

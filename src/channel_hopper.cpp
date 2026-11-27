@@ -37,8 +37,10 @@ bool ChannelHopper::update(unsigned long now) {
         return false;
     }
 
-    const uint8_t nextChannel =
-        currentChannel_ >= lastChannel_ ? firstChannel_ : currentChannel_ + 1;
+    uint8_t nextChannel = currentChannel_ + 1;
+    if (currentChannel_ >= lastChannel_) {
+        nextChannel = firstChannel_;
+    }
     const esp_err_t result =
         esp_wifi_set_channel(nextChannel, WIFI_SECOND_CHAN_NONE);
     if (result != ESP_OK) {

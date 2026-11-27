@@ -6,10 +6,10 @@
 #include "radio_observation.h"
 #include "rssi_filter.h"
 
-enum class RssiTrend : uint8_t {
-    Approaching,
-    Stable,
-    MovingAway
+enum RssiTrend {
+    RSSI_APPROACHING,
+    RSSI_STABLE,
+    RSSI_MOVING_AWAY
 };
 
 struct Device {
@@ -21,6 +21,7 @@ struct Device {
     float distanceMeters = 0.0f;
     bool hasDistanceEstimate = false;
     int channel = 0;
+    RadioFrameType lastFrameType = FRAME_UNKNOWN;
     uint8_t frameSubtype = 0;
     unsigned long firstSeen = 0;
     unsigned long lastSeen = 0;
@@ -29,10 +30,13 @@ struct Device {
     uint32_t managementFrameCount = 0;
     uint32_t controlFrameCount = 0;
     uint32_t dataFrameCount = 0;
+    uint32_t beaconCount = 0;
+    uint32_t probeRequestCount = 0;
+    uint32_t probeResponseCount = 0;
     uint16_t activityWindowCount = 0;
     uint16_t packetsPerMinute = 0;
     unsigned long activityWindowStarted = 0;
-    RssiTrend rssiTrend = RssiTrend::Stable;
+    RssiTrend rssiTrend = RSSI_STABLE;
     bool known = false;
 };
 
